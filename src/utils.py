@@ -111,7 +111,7 @@ def clean_and_save_data(df_movies, df_ratings):
         df_movies : pandas.DataFrame, the data from the movies csv file
         df_ratings : pandas.DataFrame, the data from the ratings csv file
     """
-    
+
     df_movies = df_movies[df_movies['genres'] != '(no genres listed)']
     listed_movie_ids = df_movies['movieId'].unique()
     df_ratings = df_ratings[df_ratings['movieId'].isin(listed_movie_ids)]
@@ -129,3 +129,34 @@ def clean_and_save_data(df_movies, df_ratings):
     df_ratings.to_csv('../data/ratings1.csv', index=False)
 
     print("Les fichiers movies1.csv et ratings1.csv ont été créés avec succès.")
+
+def filter_dataframes_by_threshold(threshold, df_movies, df_ratings):
+    """
+    Filter the movies and ratings DataFrames by removing users who have rated fewer than the threshold number of movies.
+
+    Parameters
+    ----------
+        threshold : int, the threshold number of movies a user must have rated
+        df_movies : pandas.DataFrame, the movies DataFrame
+        df_ratings : pandas.DataFrame, the ratings DataFrame
+
+    Output
+    ------
+        df_movies_thresholded : pandas.DataFrame, the filtered movies DataFrame
+        df_ratings_thresholded : pandas.DataFrame, the filtered ratings DataFrame
+    """
+    user_counts = df_ratings['userId'].value_counts()
+    valid_users = user_counts[user_counts >= threshold].index
+    df_ratings_thresholded = df_ratings[df_ratings['userId'].isin(valid_users)]
+    valid_movie_ids = df_ratings_thresholded['movieId'].unique()
+    df_movies_thresholded = df_movies[df_movies['movieId'].isin(valid_movie_ids)]
+
+    # Adding the reduction percentage
+    r_movies = len(df_movies_thresholded)/len(df_movies)
+    r_ratings = len(df_ratings_thresholded)/len(df_ratings)
+
+    # Print the number of lines deleted
+    print(f"Reduction in movies: {100 * (1 - r_movies):.2f}%")
+    print(f"Reduction in ratings: {100 * (1 - r_ratings):.2f}%")
+
+    return df_movies_thresholded, df_ratings_thresholded
