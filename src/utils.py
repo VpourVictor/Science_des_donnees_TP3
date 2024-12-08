@@ -7,10 +7,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.spatial import distance
-from sklearn.feature_selection import SelectKBest, f_classif
-from sklearn.decomposition import PCA
 from collections import defaultdict
+from joblib import Parallel, delayed
 
 
 
@@ -190,3 +188,59 @@ def create_db_content_movie(df_movies, save=False, save_path='../data/movie_matr
     if save :
         content_matrix.to_csv(save_path)
         print("Content matrix saved !")
+    
+    return content_matrix
+
+def calculate_user_profile(user_id, df_ratings, content_matrix):
+    """
+    Calculate the profile for a single user based on their ratings and the content matrix.
+
+    Parameters
+    ----------
+        user_id : int, the user ID
+        df_ratings : pandas.DataFrame, the ratings DataFrame
+        content_matrix : pandas.DataFrame, the binary content matrix
+
+    Output
+    ------
+        user_profile : pandas.Series, the user profile
+    """
+    user_ratings = df_ratings[df_ratings['userId'] == user_id]
+    user_profile = pd.Series(0, index=content_matrix.columns)
+
+    # Compute the user profile
+    for index, row in user_ratings.iterrows():
+        movie_id = row['movieId']
+        rating = row['rating']
+        user_profile += content_matrix.loc[movie_id] * rating
+
+    user_profile = user_profile / user_profile.sum()
+
+    return user_profile
+
+def calculate_user_profiles(df_ratings, content_matrix, n_jobs=-1):
+    """
+    Calculate the user profiles based on their ratings and the content matrix.
+
+    Parameters
+    ----------
+        df_ratings : pandas.DataFrame, the ratings DataFrame
+        content_matrix : pandas.DataFrame, the binary content matrix
+        n_jobs : int, the number of jobs to run in parallel
+
+    Output
+    ------
+        user_profiles : pandas.DataFrame, the user profiles matrix
+    """
+    print("Calculating user profiles...")
+    user_ids = df_ratings['userId'].unique()
+
+    # Parallelize the computation of user profiles
+    user_profiles = Parallel(n_jobs=n_jobs)(
+        delayed(calculate_user_profile)(user_id, df_ratings, content_matrix) for user_id in user_ids
+    )
+
+    user_profiles_df = pd.DataFrame(user_profiles, index=user_ids)
+
+    return user_profiles_df
+
