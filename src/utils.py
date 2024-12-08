@@ -160,3 +160,33 @@ def filter_dataframes_by_threshold(threshold, df_movies, df_ratings):
     print(f"Reduction in ratings: {100 * (1 - r_ratings):.2f}%")
 
     return df_movies_thresholded, df_ratings_thresholded
+
+
+# Question 4
+def create_db_content_movie(df_movies, save=False, save_path='../data/movie_matrix.csv'):
+
+    genres_dict = {}
+
+    # Explore the df
+    for index, row in df_movies.iterrows():
+        movie_id = row['movieId']
+        genres = row['genres']
+        genres = genres.split('|')
+
+        # Explore the genres
+        for genre in genres:
+            if genre not in genres_dict:
+                genres_dict[genre] = set()
+            genres_dict[genre].add(movie_id)
+
+    # Creation of the dataframe : matrix with zeroes and ones
+    content_matrix = pd.DataFrame(0, index=df_movies['movieId'], columns=genres_dict.keys())
+
+    # Fill the matrix using the dictionnary
+    for genre, movie_ids in genres_dict.items():
+        content_matrix.loc[list(movie_ids), genre] = 1
+
+    #save the matrix as a .csv file
+    if save :
+        content_matrix.to_csv(save_path)
+        print("Content matrix saved !")
