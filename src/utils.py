@@ -10,7 +10,7 @@ import numpy as np
 from collections import defaultdict
 from joblib import Parallel, delayed
 from math import sqrt
-
+from sklearn.model_selection import train_test_split
 # =================================================================================
 # FUNCTIONS
 # =================================================================================
@@ -345,13 +345,13 @@ def create_cross_validation_datas(data_path, folder_path):
     for i in range(5):
         random_subsets[i].to_csv(folder_path + 'ratings_partie' + str(i+1) + '.csv', index=False)
 
-#Modèles
+def create_train_test_subsets(data_path, folder_path):
+    # Diviser les données en 80 % entraînement et 20 % test
+    df = init_traitement_DB(data_path)
+    train, test = train_test_split(df, test_size=0.2, random_state=42)
+    train.to_csv(folder_path + 'ratings_apprentissage.csv', index=False)
+    test.to_csv(folder_path + 'ratings_evaluation.csv', index=False)
 
-def similarity_between_users(id1, id2):
-    pass
-
-def similarity_between_movies(id1, id2):
-    pass
 def error(Ypred, Yval):
     error = 0
     n = len(Ypred)
