@@ -11,6 +11,9 @@ from collections import defaultdict
 from joblib import Parallel, delayed
 from math import sqrt
 from sklearn.model_selection import train_test_split
+from sklearn.cluster import KMeans, SpectralClustering
+from sklearn.metrics import silhouette_score, mean_squared_error
+from joblib import Parallel, delayed
 # =================================================================================
 # FUNCTIONS
 # =================================================================================
@@ -359,3 +362,71 @@ def error(Ypred, Yval):
         error += abs(Ypred[i] - Yval[i])
     error /= n
     return error
+
+
+
+# Question 7
+
+
+def determine_optimal_clusters_para(user_profiles, cluster_method='K_means', max_clusters=10, n_jobs=-1):
+    """
+    Determine the optimal number of clusters using the silhouette score.
+
+    Parameters
+    ----------
+        user_profiles : pandas.DataFrame, the user profiles matrix
+        cluster_method : str, the clustering method ('K_means' or 'spectral')
+        max_clusters : int, the maximum number of clusters to consider
+        n_jobs : int, the number of jobs to run in parallel
+
+    Output
+    ------
+        optimal_clusters : int, the optimal number of clusters
+    """
+    # Store the silhouette scores for different cluster sizes
+    silhouette_scores = Parallel(n_jobs=n_jobs)(
+        delayed(calculate_silhouette_score_para)(user_profiles, n_clusters, cluster_method)
+        for n_clusters in range(2, max_clusters + 1, 10)
+    )
+
+    optimal_clusters = silhouette_scores.index(max(silhouette_scores)) + 2
+    print(f"Optimal number of clusters is {optimal_clusters}")
+    return optimal_clusters
+
+def calculate_silhouette_score_para(user_profiles, n_clusters, cluster_method):
+    """
+    Calculate the silhouette score for a given number of clusters.
+
+    Parameters
+    ----------
+        user_profiles : pandas.DataFrame, the user profiles matrix
+        n_clusters : int, the number of clusters
+        cluster_method : str, the clustering method ('K_means' or 'spectral')
+
+    Output
+    ------
+        silhouette_avg : float, the average silhouette score
+    """
+    if cluster_method == 'K_means':
+        # Train with kmeans
+        kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+        cluster_labels = kmeans.fit_predict(user_profiles)
+    else:
+        # Train with spectral clustering
+        spectral = SpectralClustering(n_clusters=n_clusters, affinity='nearest_neighbors', random_state=42)
+        cluster_labels = spectral.fit_predict(user_profiles)
+
+    # Compute the silhouette score
+    silhouette_avg = silhouette_score(user_profiles, cluster_labels)
+    print(f"For n_clusters = {n_clusters}, the average silhouette_score is : {silhouette_avg}")
+    return silhouette_avg
+
+def apply_spectral_clustering(user_profiles, n_clusters):
+    spectral = SpectralClustering(n_clusters=n_clusters, affinity='nearest_neighbors', random_state=42)
+    cluster_labels = spectral.fit_predict(user_profiles)
+    return cluster_labels
+
+def apply_kmeans_clustering(user_profiles, n_clusters):
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+    cluster_labels = kmeans.fit_predict(user_profiles)
+    return cluster_labels
