@@ -386,7 +386,7 @@ def determine_optimal_clusters_para(user_profiles, cluster_method='K_means', max
     # Store the silhouette scores for different cluster sizes
     silhouette_scores = Parallel(n_jobs=n_jobs)(
         delayed(calculate_silhouette_score_para)(user_profiles, n_clusters, cluster_method)
-        for n_clusters in range(2, max_clusters + 1, 10)
+        for n_clusters in range(2, max_clusters + 1)
     )
 
     optimal_clusters = silhouette_scores.index(max(silhouette_scores)) + 2
